@@ -1,0 +1,7 @@
+ossapi==1.2.2
+circleguard==2.4.0
+numpy==1.17.2
+matplotlib==3.0.3
+scipy==1.2.1
+slider==0.2.1
+PyQt5==5.13.1
