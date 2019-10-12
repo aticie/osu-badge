@@ -6,7 +6,6 @@ from circleguard import ReplayPath
 from circleguard.enums import Keys, Mod
 from slider import Beatmap, Library
 from ossapi import ossapi
-import matplotlib.pyplot as plt
 import scipy.interpolate as interp
 import numpy as np
 import os
