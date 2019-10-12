@@ -9,6 +9,7 @@ from ossapi import ossapi
 import matplotlib.pyplot as plt
 import scipy.interpolate as interp
 import numpy as np
+import os
 import scipy
 from badgeWidget import VisualizerWindow
 from PyQt5.QtWidgets import QApplication
@@ -22,7 +23,9 @@ CACHE_DIR = "./cache/"
 _api = ossapi(OSU_API_KEY)
 _cg = Circleguard(OSU_API_KEY)
 _loader = _cg.loader
-_library = Library(CACHE_DIR)
+if not os.path.exists(CACHE_DIR):
+    os.mkdir(CACHE_DIR)
+_library = Library.create_db(CACHE_DIR)
 
 
 def _get_score_info():
