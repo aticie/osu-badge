@@ -125,3 +125,10 @@ dmypy.json
 # stuff
 /cache
 export.jpg
+/.vs/osu-badge/v16
+/.vs
+/osu-badge.pyproj
+/osu-badge.sln
+/Flags
+/Covers
+/Avatars
