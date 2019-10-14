@@ -14,8 +14,8 @@ from badgeWidget import VisualizerWindow
 from PyQt5.QtWidgets import QApplication
 
 USER = "4504101"
-MAP = "2097898"
-OSU_API_KEY = ""
+#MAP = "2097898" # Read map id from user recent
+OSU_API_KEY = os.environ["api_key"] # Read api_key from environment variables
 USE_REPLAY = False  # if the file should be used instead of downloading the replay
 REPLAY_PATH = "./replay/nonexistingfile.osr"
 CACHE_DIR = "./cache/"
@@ -26,10 +26,13 @@ if not os.path.exists(CACHE_DIR):
     os.mkdir(CACHE_DIR)
 _library = Library.create_db(CACHE_DIR)
 
-
 def _get_score_info():
     print("@retrieving score info")
-    return _api.get_scores({"b":MAP, "u":USER})[0]
+    return _api.get_user_best({"u":USER, "limit":1})[0]
+
+def _get_bmap_info(bmap_id, mods):
+    print("@retrieving beatmap info")
+    return _api.get_beatmaps({"b":bmap_id, "mods": mods})[0]
 
 def _get_replay(score_info):
     if USE_REPLAY:
@@ -37,6 +40,7 @@ def _get_replay(score_info):
         replay = ReplayPath(REPLAY_PATH)
     else:
         print("@USE_REPLAY not set, trying to download replay")
+        score_info["replay_available"] = 0
         if score_info["replay_available"] != "0":
             print("@Downloading Replay")
             replay = ReplayMap(user_id=USER,map_id=MAP)
@@ -104,12 +108,13 @@ def _get_norm_hit_map(rp):
 
 if __name__ == "__main__":
     score_info = _get_score_info()
+    bmap_info _get_bmap_info(score_info["beatmap_id"], score_info["enabled_mods"])
     replay = _get_replay(score_info)
     graph = _get_graph_data(replay)
     hit_map  = _get_norm_hit_map(replay)
     app = QApplication([])
-    visualizer_window = VisualizerWindow(score_info, graph, hit_map)
+    visualizer_window = VisualizerWindow(score_info, bmap_info, graph, hit_map)
     _cg.library.close()
     # remove comment to display after saving
-    """visualizer_window.show() 
-    app.exec_()"""
+    visualizer_window.show() 
+    app.exec_()
