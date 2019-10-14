@@ -108,7 +108,7 @@ def _get_norm_hit_map(rp):
 
 if __name__ == "__main__":
     score_info = _get_score_info()
-    bmap_info _get_bmap_info(score_info["beatmap_id"], score_info["enabled_mods"])
+    bmap_info = _get_bmap_info(score_info["beatmap_id"], score_info["enabled_mods"])
     replay = _get_replay(score_info)
     graph = _get_graph_data(replay)
     hit_map  = _get_norm_hit_map(replay)
