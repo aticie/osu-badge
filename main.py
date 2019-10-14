@@ -12,9 +12,10 @@ import os
 import scipy
 from badgeWidget import VisualizerWindow
 from PyQt5.QtWidgets import QApplication
+import cv2
+import requests
 
 USER = "4504101"
-#MAP = "2097898" # Read map id from user recent
 OSU_API_KEY = os.environ["api_key"] # Read api_key from environment variables
 USE_REPLAY = False  # if the file should be used instead of downloading the replay
 REPLAY_PATH = "./replay/nonexistingfile.osr"
@@ -34,7 +35,11 @@ def _get_bmap_info(bmap_id, mods):
     print("@retrieving beatmap info")
     return _api.get_beatmaps({"b":bmap_id, "mods": mods})[0]
 
-def _get_replay(score_info):
+def _get_user_info(user_id):
+    print("@retrieving user info")
+    return _api.get_user({"u":user_id})[0]
+
+def _get_replay(score_info, map_id):
     if USE_REPLAY:
         print("@USE_REPLAY set, using REPLAY_PATH")
         replay = ReplayPath(REPLAY_PATH)
@@ -43,7 +48,7 @@ def _get_replay(score_info):
         score_info["replay_available"] = 0
         if score_info["replay_available"] != "0":
             print("@Downloading Replay")
-            replay = ReplayMap(user_id=USER,map_id=MAP)
+            replay = ReplayMap(user_id=USER,map_id=map_id)
         else:
             print("@No replay available")
             exit(-1)
@@ -51,13 +56,29 @@ def _get_replay(score_info):
     print("@"+replay.__str__())
     return replay
 
-def _get_graph_data(rp):
+def image_from_cache_or_web(thing_id, url, folder):
+
+    if not os.path.exists(folder):
+        os.mkdir(folder)
+
+    path = os.path.join(folder, thing_id+".jpg")
+    if os.path.exists(path):
+        return
+    else:
+        r = requests.get(url)
+        nparr = np.fromstring(r.content, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        cv2.imwrite(path, image)
+
+    return
+
+def _get_graph_data(rp, map_id):
     global hit_map
     # inizilaite _cg
     _cg = Circleguard(OSU_API_KEY)
 
     # get beatmap
-    bm = _library.lookup_by_id(MAP, download=True, save=True)
+    bm = _library.lookup_by_id(map_id, download=True, save=True)
 
     # generate Investigator class
     investigator = Investigator(rp, bm, -1)
@@ -83,14 +104,14 @@ def _get_graph_data(rp):
 
     return arr1_compress
 
-def _get_norm_hit_map(rp):
+def _get_norm_hit_map(rp, map_id):
     mods1 = [Mod(mod_val) for mod_val in utils.bits(rp.mods)]
     flip1 = Mod.HardRock in mods1
     # inizilaite _cg
     _cg = Circleguard(OSU_API_KEY)
 
     # get beatmap
-    bm = _library.lookup_by_id(MAP, download=True, save=True)
+    bm = _library.lookup_by_id(map_id, download=True, save=True)
 
     # generate Investigator class
     investigator = Investigator(rp, bm, -1)
@@ -107,13 +128,33 @@ def _get_norm_hit_map(rp):
     return new_hitmap
 
 if __name__ == "__main__":
+
     score_info = _get_score_info()
     bmap_info = _get_bmap_info(score_info["beatmap_id"], score_info["enabled_mods"])
-    replay = _get_replay(score_info)
-    graph = _get_graph_data(replay)
-    hit_map  = _get_norm_hit_map(replay)
+    user_info = _get_user_info(score_info["user_id"])
+
+    bmp_set_id = bmap_info["beatmapset_id"]
+    bmp_id = score_info["beatmap_id"]
+    user_id = score_info["user_id"]
+    country = user_info["country"]
+    
+    cover_url = 'https://assets.ppy.sh/beatmaps/{}/covers/cover.jpg'.format(bmp_set_id)
+    avatar_url = 'https://a.ppy.sh/{}'.format(user_id)
+    flag_url = 'https://osu.ppy.sh/images/flags/{}.png'.format(country)
+
+    cover_folder = os.path.join(os.getcwd(),"Covers")
+    avatar_folder = os.path.join(os.getcwd(),"Avatars")
+    flag_folder = os.path.join(os.getcwd(),"Flags")
+    
+    image_from_cache_or_web(bmp_set_id, cover_url, cover_folder)
+    image_from_cache_or_web(user_id, avatar_url, avatar_folder)
+    image_from_cache_or_web(country, flag_url, flag_folder)
+
+    replay = _get_replay(score_info, bmp_id)
+    graph = _get_graph_data(replay, bmp_id)
+    hit_map  = _get_norm_hit_map(replay, bmp_id)
     app = QApplication([])
-    visualizer_window = VisualizerWindow(score_info, bmap_info, graph, hit_map)
+    visualizer_window = VisualizerWindow(score_info, bmap_info, user_info, graph, hit_map)
     _cg.library.close()
     # remove comment to display after saving
     visualizer_window.show() 

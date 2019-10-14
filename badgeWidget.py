@@ -5,11 +5,12 @@ from PyQt5.QtGui import QColor, QPainterPath, QPainter, QPen, QKeySequence, QIco
 
 class _Renderer(QWidget):
 
-    def __init__(self, score_info, bmap_info, graph, hitmap):
+    def __init__(self, score_info, bmap_info, user_info, graph, hitmap):
         super(_Renderer, self).__init__()  
         self.graph = graph
         self.score_info = score_info
         self.bmap_info = bmap_info
+        self.user_info = user_info
         self.hitmap = hitmap
         self.setFixedSize(616,192)  # stollen from some banner site
         self.update()
@@ -22,7 +23,7 @@ class _Renderer(QWidget):
         self.painter.setPen(QPen(QColor(0, 0, 0, 180)))
         index = 0
         # background
-        pixmap = QPixmap("background.png")
+        pixmap = QPixmap(f"Covers/{self.bmap_info['beatmapset_id']}.jpg")
         self.painter.drawPixmap(0,0,616,192, pixmap)
         for i in self.graph:
             index += 1
@@ -58,16 +59,18 @@ class _Renderer(QWidget):
         _pen = self.painter.pen()
         kek = QPainterPath()
 
-        bmap_artist = bmap_info["artist"]
-        bmap_title = bmap_info["title"]
-        bmap_creator = bmap_info["creator"]
-        bmap_diff = bmap_info["version"]
+        bmap_artist = self.bmap_info["artist"]
+        bmap_title = self.bmap_info["title"]
+        bmap_creator = self.bmap_info["creator"]
+        bmap_diff = self.bmap_info["version"]
+
+        username = self.user_info["username"]
 
         kek.addText(15, 30,QFont("Exo 2", pointSize=20, weight=500), bmap_title)
         kek.addText(352, 30, QFont("Exo 2", pointSize=10, weight=500), bmap_diff)
         kek.addText(15, 55, QFont("Exo 2", pointSize=15, weight=500), f'{score_info["count100"]}x100 | {score_info["count50"]}x50 | {score_info["countmiss"]}x0 | mods:NC')
         acc = round(((int(score_info["count300"])*300) + (int(score_info["count100"])*100) + (int(score_info["count50"])*50)) / ( 300 * (int(score_info["count300"]) + int(score_info["count50"]) + int(score_info["count100"])) )*100,2)
-        kek.addText(15, 80, QFont("Exo 2", pointSize=15, weight=500),f'{score_info["maxcombo"]}x/625x | {acc}% | played by {score_info["username"]}')
+        kek.addText(15, 80, QFont("Exo 2", pointSize=15, weight=500),f'{score_info["maxcombo"]}x/625x | {acc}% | played by {username}')
         score_info["pp"] = round(float(score_info["pp"]),2) if not score_info["pp"] == None else 0
         kek.addText(365, 192-15, QFont("Exo 2", pointSize=38, weight=500, italic=True), f'{score_info["pp"]}PP')  # {round(float(score_info["pp"]),2)}
         kek.addText(533- (20 if len(score_info["rank"]) == 2 else 0), 90, QFont("Exo 2", pointSize=55, weight=800), score_info["rank"] if score_info["rank"] != "SH" else "S+")
@@ -91,9 +94,9 @@ class _Renderer(QWidget):
 
 
 class _Interface(QWidget):
-    def __init__(self, a, b,c):
+    def __init__(self, a, b, c, d, e):
         super(_Interface, self).__init__()
-        self.renderer = _Renderer(a,b,c)
+        self.renderer = _Renderer(a,b,c,d,e)
 
         self.layout = QGridLayout()
         self.slider = QSlider(Qt.Horizontal)
@@ -104,10 +107,10 @@ class _Interface(QWidget):
 
 
 class VisualizerWindow(QMainWindow):
-    def __init__(self, a, b,c):
+    def __init__(self, a, b, c, d, e):
         super(VisualizerWindow, self).__init__()
         self.setWindowTitle("Visualizer")
-        self.interface = _Interface(a,b,c)
+        self.interface = _Interface(a,b,c,d,e)
         self.setCentralWidget(self.interface)
         img = QImage(616,192, QImage.Format_ARGB32_Premultiplied)
         painter = QPainter(img)
